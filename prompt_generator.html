@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prompt Enhancer - Generate Multiple Detailed Prompts</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0a2847 0%, #1a5f7a 50%, #0d3b5c 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+            color: #e2e8f0;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 42px;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: #94a3b8;
+            font-size: 15px;
+        }
+
+        .benefits-section {
+            background: linear-gradient(135deg, rgba(96, 165, 250, 0.1), rgba(167, 139, 250, 0.1));
+            border: 1px solid rgba(96, 165, 250, 0.3);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+        }
+
+        .benefits-section h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 20px;
+            margin-bottom: 15px;
+            color: #f1f5f9;
+        }
+
+        .benefits-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .benefit-item {
+            background: rgba(15, 23, 42, 0.4);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 3px solid #60a5fa;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .benefit-icon {
+            font-size: 20px;
+            margin-bottom: 8px;
+        }
+
+        .benefit-title {
+            font-weight: 600;
+            color: #60a5fa;
+            margin-bottom: 5px;
+        }
+
+        .input-section {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #cbd5e1;
+            margin-bottom: 12px;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 15px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            border-radius: 8px;
+            color: #e2e8f0;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            min-height: 120px;
+            resize: vertical;
+            transition: all 0.3s ease;
+            line-height: 1.6;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #60a5fa;
+            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+            background: rgba(15, 23, 42, 0.8);
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #60a5fa, #3b82f6);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(96, 165, 250, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.secondary {
+            background: rgba(96, 165, 250, 0.1);
+            color: #60a5fa;
+            border: 1px solid #60a5fa;
+        }
+
+        button.secondary:hover {
+            background: rgba(96, 165, 250, 0.2);
+        }
+
+        .options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .option-group {
+            background: rgba(15, 23, 42, 0.4);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(96, 165, 250, 0.2);
+        }
+
+        .option-group label {
+            margin-bottom: 10px;
+        }
+
+        select {
+            width: 100%;
+            padding: 10px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            border-radius: 6px;
+            color: #e2e8f0;
+            font-size: 13px;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #60a5fa;
+            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+        }
+
+        #output-section {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+            pointer-events: none;
+        }
+
+        #output-section.visible {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        .prompts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .prompt-card {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(96, 165, 250, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            position: relative;
+        }
+
+        .prompt-card h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #60a5fa;
+        }
+
+        .prompt-content {
+            background: rgba(15, 23, 42, 0.6);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 3px solid #60a5fa;
+            font-size: 13px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-word;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            font-family: 'Inter', monospace;
+        }
+
+        .prompt-content::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .prompt-content::-webkit-scrollbar-track {
+            background: rgba(30, 41, 59, 0.5);
+        }
+
+        .prompt-content::-webkit-scrollbar-thumb {
+            background: rgba(96, 165, 250, 0.5);
+            border-radius: 3px;
+        }
+
+        .copy-btn {
+            width: 100%;
+            padding: 10px;
+            background: rgba(96, 165, 250, 0.1);
+            color: #60a5fa;
+            border: 1px solid #60a5fa;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .copy-btn:hover {
+            background: rgba(96, 165, 250, 0.2);
+        }
+
+        .copy-btn.copied {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+            border-color: #22c55e;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(96, 165, 250, 0.2);
+            border-top-color: #60a5fa;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .output-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 32px;
+            margin-bottom: 30px;
+            color: #f1f5f9;
+            text-align: center;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 60px;
+            padding: 25px;
+            border-top: 1px solid rgba(96, 165, 250, 0.3);
+            font-size: 13px;
+            background: linear-gradient(135deg, rgba(96, 165, 250, 0.05), rgba(59, 130, 246, 0.05));
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+
+        footer p {
+            margin: 0;
+            letter-spacing: 0.05em;
+        }
+
+        footer strong {
+            background: linear-gradient(135deg, #38bdf8, #60a5fa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 700;
+            text-decoration: underline;
+            text-decoration-color: rgba(96, 165, 250, 0.5);
+            text-underline-offset: 4px;
+        }
+
+        footer a {
+            color: #60a5fa;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        footer a:hover {
+            color: #a78bfa;
+        }
+
+        @media (max-width: 768px) {
+            .options {
+                grid-template-columns: 1fr;
+            }
+
+            .controls {
+                grid-template-columns: 1fr;
+            }
+
+            .prompts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 28px;
+            }
+        }
+
+        .info-text {
+            background: rgba(96, 165, 250, 0.1);
+            border-left: 3px solid #60a5fa;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #cbd5e1;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Prompt Enhancer</h1>
+            <p class="subtitle">Transform your prompt into multiple detailed variations</p>
+        </header>
+
+        <div class="benefits-section">
+            <h2>💡 Why This Tool Matters</h2>
+            <div class="benefits-grid">
+                <div class="benefit-item">
+                    <div class="benefit-icon">💰</div>
+                    <div class="benefit-title">Save Tokens</div>
+                    <div>Get better results faster with optimized prompts, reducing wasted API calls and token usage</div>
+                </div>
+                <div class="benefit-item">
+                    <div class="benefit-icon">⚡</div>
+                    <div class="benefit-title">No More Struggling</div>
+                    <div>Stop rewriting prompts manually. Generate professional variations instantly</div>
+                </div>
+                <div class="benefit-item">
+                    <div class="benefit-icon">🎯</div>
+                    <div class="benefit-title">Better Results</div>
+                    <div>Multiple approaches mean you'll find the best prompt style for your needs</div>
+                </div>
+                <div class="benefit-item">
+                    <div class="benefit-icon">⏱️</div>
+                    <div class="benefit-title">Save Time</div>
+                    <div>Skip hours of prompt engineering. Get optimized variations in seconds</div>
+                </div>
+                <div class="benefit-item">
+                    <div class="benefit-icon">🔄</div>
+                    <div class="benefit-title">Multiple Angles</div>
+                    <div>See your idea from different perspectives and find the winning approach</div>
+                </div>
+                <div class="benefit-item">
+                    <div class="benefit-icon">✨</div>
+                    <div class="benefit-title">Professional Quality</div>
+                    <div>Each variation is production-ready and optimized for AI models</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="input-section">
+            <label>Enter Your Prompt</label>
+            <textarea id="inputPrompt" placeholder="Paste your prompt here..."></textarea>
+
+            <div class="options">
+                <div class="option-group">
+                    <label>Number of Variations</label>
+                    <select id="numVariations">
+                        <option value="3">3 Variations</option>
+                        <option value="4">4 Variations</option>
+                        <option value="5">5 Variations</option>
+                        <option value="6">6 Variations</option>
+                    </select>
+                </div>
+
+                <div class="option-group">
+                    <label>Style/Approach</label>
+                    <select id="approach">
+                        <option value="mixed">Mixed (Different approaches)</option>
+                        <option value="detailed">All Detailed</option>
+                        <option value="concise">All Concise</option>
+                        <option value="creative">Creative Variations</option>
+                        <option value="professional">Professional Variations</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button onclick="generatePrompts()">Generate Variations</button>
+                <button class="secondary" onclick="clearAll()">Clear</button>
+            </div>
+
+            <div class="info-text">
+                💡 Your prompt will be expanded into multiple versions, each with a unique approach or angle to help you get better results.
+            </div>
+        </div>
+
+        <div id="output-section">
+            <div class="output-title">📝 Generated Prompts</div>
+            <div id="promptsContainer"></div>
+        </div>
+
+        <footer>
+            <p>✨ Powered by <strong>Sarath Vaddi</strong></p>
+        </footer>
+    </div>
+
+    <script>
+        function clearAll() {
+            document.getElementById('inputPrompt').value = '';
+            document.getElementById('output-section').classList.remove('visible');
+        }
+
+        function generatePrompts() {
+            const inputPrompt = document.getElementById('inputPrompt').value.trim();
+            const numVariations = parseInt(document.getElementById('numVariations').value);
+            const approach = document.getElementById('approach').value;
+
+            if (!inputPrompt) {
+                alert('Please enter a prompt first!');
+                return;
+            }
+
+            const button = event.target;
+            button.textContent = 'Generating...';
+            button.disabled = true;
+
+            setTimeout(() => {
+                const prompts = generateVariations(inputPrompt, numVariations, approach);
+                displayPrompts(prompts);
+                button.textContent = 'Generate Variations';
+                button.disabled = false;
+            }, 1000);
+        }
+
+        function generateVariations(basePrompt, count, approach) {
+            const prompts = [];
+
+            if (approach === 'mixed') {
+                const variations = [
+                    generateDetailedVersion(basePrompt),
+                    generateConciseVersion(basePrompt),
+                    generateExampleDrivenVersion(basePrompt),
+                    generateStepByStepVersion(basePrompt),
+                    generateContextualVersion(basePrompt),
+                    generateCreativeVersion(basePrompt)
+                ];
+                return variations.slice(0, count);
+            } else if (approach === 'detailed') {
+                for (let i = 0; i < count; i++) {
+                    prompts.push(generateDetailedVersion(basePrompt, i));
+                }
+            } else if (approach === 'concise') {
+                for (let i = 0; i < count; i++) {
+                    prompts.push(generateConciseVersion(basePrompt, i));
+                }
+            } else if (approach === 'creative') {
+                for (let i = 0; i < count; i++) {
+                    prompts.push(generateCreativeVersion(basePrompt, i));
+                }
+            } else if (approach === 'professional') {
+                for (let i = 0; i < count; i++) {
+                    prompts.push(generateProfessionalVersion(basePrompt, i));
+                }
+            }
+
+            return prompts;
+        }
+
+        function generateDetailedVersion(prompt, index = 0) {
+            const titles = [
+                'Detailed & Comprehensive',
+                'In-Depth Analysis',
+                'Extended Specification',
+                'Comprehensive Breakdown',
+                'Full Details Version'
+            ];
+
+            return {
+                title: titles[index % titles.length],
+                content: `${prompt}
+
+## DETAILED REQUIREMENTS:
+- Provide comprehensive coverage of all aspects
+- Include step-by-step explanations for each component
+- Add context and background information where relevant
+- Explain the reasoning behind approaches
+- Discuss potential edge cases and how to handle them
+- Include examples and case studies
+- Address common misconceptions
+- Provide alternatives and trade-offs
+
+## EXPECTED OUTPUT:
+- Thorough and detailed response
+- Multiple perspectives and approaches
+- Supporting evidence or examples
+- Next steps and recommendations
+- Relevant resources or references`
+            };
+        }
+
+        function generateConciseVersion(prompt, index = 0) {
+            const titles = [
+                'Concise & Direct',
+                'Quick Summary',
+                'Straight to the Point',
+                'Condensed Version',
+                'Essential Only'
+            ];
+
+            return {
+                title: titles[index % titles.length],
+                content: `${prompt}
+
+## KEY POINTS ONLY:
+- Focus on the essentials
+- Provide direct, actionable answers
+- Avoid lengthy explanations
+- Use bullet points for clarity
+- Keep it brief and focused
+
+## EXPECTED OUTPUT:
+- Short, clear response
+- Main points highlighted
+- Actionable takeaways
+- No unnecessary details`
+            };
+        }
+
+        function generateExampleDrivenVersion(prompt, index = 0) {
+            return {
+                title: 'Example-Driven Approach',
+                content: `${prompt}
+
+## PROVIDE EXAMPLES:
+- Start with concrete, real-world examples
+- Include code samples or use cases
+- Show input/output pairs
+- Demonstrate edge cases through examples
+- Build understanding from specific to general
+
+## EXPECTED OUTPUT:
+- Multiple concrete examples
+- Before/after comparisons
+- Code snippets or templates
+- Real-world scenarios
+- Pattern explanations based on examples`
+            };
+        }
+
+        function generateStepByStepVersion(prompt, index = 0) {
+            return {
+                title: 'Step-by-Step Guide',
+                content: `${prompt}
+
+## STRUCTURE AS STEPS:
+- Break down into numbered steps
+- Each step should be actionable
+- Include prerequisites
+- Explain why each step matters
+- Add checkpoints to verify progress
+- Include troubleshooting for each step
+
+## EXPECTED OUTPUT:
+- Clear, numbered steps
+- Prerequisites listed
+- Verification checkpoints
+- Troubleshooting guide
+- Completion checklist`
+            };
+        }
+
+        function generateContextualVersion(prompt, index = 0) {
+            return {
+                title: 'Context & Background',
+                content: `${prompt}
+
+## ADD CONTEXT:
+- Explain the why before the how
+- Provide background information
+- Discuss current best practices
+- Address industry standards
+- Explain implications and impact
+- Link to related concepts
+
+## EXPECTED OUTPUT:
+- Contextual background
+- Industry perspective
+- Best practices reference
+- Implications discussed
+- Related concepts explained`
+            };
+        }
+
+        function generateCreativeVersion(prompt, index = 0) {
+            const titles = [
+                'Creative & Innovative',
+                'Out-of-the-Box Thinking',
+                'Novel Approach',
+                'Unconventional Perspective',
+                'Creative Solution'
+            ];
+
+            return {
+                title: titles[index % titles.length],
+                content: `${prompt}
+
+## CREATIVE APPROACH:
+- Think outside conventional solutions
+- Suggest innovative approaches
+- Combine ideas in unexpected ways
+- Challenge assumptions
+- Propose experimental methods
+- Include unconventional but viable solutions
+
+## EXPECTED OUTPUT:
+- Creative solutions
+- Novel approaches
+- Innovative combinations
+- Experimental ideas
+- Unique perspectives`
+            };
+        }
+
+        function generateProfessionalVersion(prompt, index = 0) {
+            const titles = [
+                'Professional & Formal',
+                'Business-Oriented',
+                'Enterprise Standard',
+                'Corporate Approach',
+                'Formal Specification'
+            ];
+
+            return {
+                title: titles[index % titles.length],
+                content: `${prompt}
+
+## PROFESSIONAL STANDARDS:
+- Use formal, professional language
+- Include metrics and KPIs
+- Address governance and compliance
+- Consider scalability
+- Document for stakeholder review
+- Include ROI and business value
+- Follow industry best practices
+- Ensure enterprise readiness
+
+## EXPECTED OUTPUT:
+- Professional documentation
+- Business impact assessment
+- Compliance checklist
+- Scalability analysis
+- Executive summary
+- Implementation timeline
+- Risk assessment`
+            };
+        }
+
+        function displayPrompts(prompts) {
+            const container = document.getElementById('promptsContainer');
+            container.innerHTML = '';
+
+            const grid = document.createElement('div');
+            grid.className = 'prompts-grid';
+
+            prompts.forEach((prompt, index) => {
+                const card = document.createElement('div');
+                card.className = 'prompt-card';
+                card.innerHTML = `
+                    <h3>${prompt.title}</h3>
+                    <div class="prompt-content">${escapeHtml(prompt.content)}</div>
+                    <button class="copy-btn" onclick="copyPrompt(${index}, this)">📋 Copy to Clipboard</button>
+                `;
+                grid.appendChild(card);
+            });
+
+            container.appendChild(grid);
+
+            // Store prompts for copying
+            window.generatedPrompts = prompts;
+
+            const section = document.getElementById('output-section');
+            section.classList.add('visible');
+
+            setTimeout(() => {
+                section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 300);
+        }
+
+        function copyPrompt(index, button) {
+            const prompt = window.generatedPrompts[index];
+            const text = prompt.content;
+
+            navigator.clipboard.writeText(text).then(() => {
+                button.textContent = '✓ Copied!';
+                button.classList.add('copied');
+
+                setTimeout(() => {
+                    button.textContent = '📋 Copy to Clipboard';
+                    button.classList.remove('copied');
+                }, 2000);
+            }).catch(() => {
+                alert('Failed to copy. Please try again.');
+            });
+        }
+
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+    </script>
+</body>
+</html>
