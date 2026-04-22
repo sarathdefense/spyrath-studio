@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sarath Vaddi — Developer & Builder</title>
+  <meta name="description" content="Apps and tools built by Sarath Vaddi" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #0a2847 0%, #1a5f7a 50%, #0d3b5c 100%);
+      min-height: 100vh;
+      color: #e2e8f0;
+      overflow-x: hidden;
+    }
+
+    /* Neural Network Canvas */
+    #neural-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+
+
+    /* Content */
+    .page {
+      position: relative;
+      z-index: 1;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 60px 20px 140px;
+    }
+
+    /* Hero */
+    .hero {
+      text-align: center;
+      margin-bottom: 60px;
+    }
+
+    .avatar {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #60a5fa, #a78bfa);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      margin: 0 auto 20px;
+      border: 3px solid rgba(96,165,250,0.4);
+      box-shadow: 0 0 30px rgba(96,165,250,0.2);
+    }
+
+    .hero h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(32px, 7vw, 52px);
+      background: linear-gradient(135deg, #60a5fa, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 12px;
+    }
+
+    .hero p {
+      color: #94a3b8;
+      font-size: clamp(14px, 3vw, 16px);
+      line-height: 1.7;
+      max-width: 500px;
+      margin: 0 auto 20px;
+    }
+
+    .badges {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      padding: 5px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      background: rgba(96,165,250,0.1);
+      border: 1px solid rgba(96,165,250,0.3);
+      color: #60a5fa;
+    }
+
+    /* Section */
+    .section-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 24px;
+      color: #f1f5f9;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(96,165,250,0.2);
+    }
+
+    /* App Cards */
+    .apps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 20px;
+      margin-bottom: 50px;
+    }
+
+    .app-card {
+      background: rgba(30,41,59,0.8);
+      border: 1px solid rgba(96,165,250,0.25);
+      border-radius: 16px;
+      padding: 24px;
+      text-decoration: none;
+      color: inherit;
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      backdrop-filter: blur(10px);
+      cursor: pointer;
+    }
+
+    .app-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(96,165,250,0.5);
+      box-shadow: 0 12px 30px rgba(96,165,250,0.15);
+    }
+
+    .app-icon {
+      font-size: 36px;
+    }
+
+    .app-name {
+      font-size: 18px;
+      font-weight: 700;
+      color: #f1f5f9;
+    }
+
+    .app-desc {
+      font-size: 13px;
+      color: #94a3b8;
+      line-height: 1.6;
+      flex: 1;
+    }
+
+    .app-tags {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .app-tag {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 10px;
+      background: rgba(96,165,250,0.1);
+      color: #60a5fa;
+      border: 1px solid rgba(96,165,250,0.2);
+    }
+
+    .app-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 16px;
+      background: linear-gradient(135deg, #60a5fa, #3b82f6);
+      color: white;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: all 0.2s;
+      border: none;
+      cursor: pointer;
+      width: fit-content;
+    }
+
+    .app-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(96,165,250,0.3);
+    }
+
+    .app-btn.secondary {
+      background: rgba(96,165,250,0.1);
+      border: 1px solid rgba(96,165,250,0.3);
+      color: #60a5fa;
+    }
+
+    .store-btns {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* Mobile App section */
+    .mobile-card {
+      background: rgba(30,41,59,0.8);
+      border: 1px solid rgba(96,165,250,0.25);
+      border-radius: 16px;
+      padding: 24px;
+      backdrop-filter: blur(10px);
+      margin-bottom: 50px;
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .mobile-icon {
+      font-size: 56px;
+      flex-shrink: 0;
+    }
+
+    .mobile-info { flex: 1; min-width: 200px; }
+    .mobile-name { font-size: 20px; font-weight: 700; color: #f1f5f9; margin-bottom: 6px; }
+    .mobile-desc { font-size: 13px; color: #94a3b8; line-height: 1.6; margin-bottom: 14px; }
+
+    /* Contact */
+    .contact {
+      text-align: center;
+      margin-bottom: 60px;
+    }
+
+    .contact p {
+      color: #94a3b8;
+      font-size: 14px;
+      margin-bottom: 16px;
+    }
+
+    .contact-links {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .contact-link {
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      background: rgba(96,165,250,0.1);
+      border: 1px solid rgba(96,165,250,0.3);
+      color: #60a5fa;
+      transition: all 0.2s;
+    }
+
+    .contact-link:hover {
+      background: rgba(96,165,250,0.2);
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 20px;
+      font-size: 13px;
+      color: #64748b;
+      border-top: 1px solid rgba(96,165,250,0.15);
+    }
+
+    footer span {
+      background: linear-gradient(135deg, #38bdf8, #60a5fa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-weight: 700;
+    }
+
+    @media (max-width: 480px) {
+      .apps-grid { grid-template-columns: 1fr; }
+      .mobile-card { flex-direction: column; text-align: center; }
+      .store-btns { justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Neural Network Background -->
+  <canvas id="neural-canvas"></canvas>
+
+  <div class="page">
+
+    <!-- Hero -->
+    <div class="hero">
+      <h1>Sarath Vaddi</h1>
+      <p>Independent app developer building useful tools for everyday people — from faith communities to dev teams.</p>
+      <div class="badges">
+        <span class="badge">🛠️ Developer Tools</span>
+        <span class="badge">📖 Bible & Faith</span>
+        <span class="badge">⛪ Ministry</span>
+        <span class="badge">📱 Mobile Apps</span>
+      </div>
+    </div>
+
+    <!-- Developer Tools -->
+    <div class="section-title">🛠️ Developer Tools</div>
+    <div class="apps-grid">
+
+      <div class="app-card">
+        <div class="app-icon">✨</div>
+        <div class="app-name">Prompt Enhancer</div>
+        <div class="app-desc">Transform your prompt into multiple unique AI-generated variations instantly. Save tokens, get better results.</div>
+        <div class="app-tags">
+          <span class="app-tag">AI</span>
+          <span class="app-tag">Productivity</span>
+          <span class="app-tag">Free</span>
+        </div>
+        <a class="app-btn" href="https://prompt-enhancer-sarath.vercel.app" target="_blank">Open App →</a>
+      </div>
+
+      <div class="app-card">
+        <div class="app-icon">🎨</div>
+        <div class="app-name">Whiteboard</div>
+        <div class="app-desc">Live collaborative whiteboard for teaching your team. Draw, add sticky notes, shapes, text and more.</div>
+        <div class="app-tags">
+          <span class="app-tag">Teaching</span>
+          <span class="app-tag">Collaboration</span>
+          <span class="app-tag">Free</span>
+        </div>
+        <a class="app-btn" href="https://whiteboard-sarath.vercel.app" target="_blank">Open App →</a>
+      </div>
+
+    </div>
+
+    <!-- Bible & Faith -->
+    <div class="section-title">📖 Bible & Faith</div>
+    <div class="apps-grid">
+
+      <div class="app-card">
+        <div class="app-icon">📖</div>
+        <div class="app-name">Bible Quiz</div>
+        <div class="app-desc">AI-powered Bible quiz for church members of all ages. Multiple categories, difficulty levels, timer and leaderboard.</div>
+        <div class="app-tags">
+          <span class="app-tag">Faith</span>
+          <span class="app-tag">AI</span>
+          <span class="app-tag">Free</span>
+        </div>
+        <a class="app-btn" href="https://biblequiz-sarath.vercel.app" target="_blank">Open App →</a>
+      </div>
+
+      <div class="app-card">
+        <div class="app-icon">🕊️</div>
+        <div class="app-name">Bible AI</div>
+        <div class="app-desc">Ask questions about the Bible, get verse explanations, find relevant passages, and deepen your understanding of scripture.</div>
+        <div class="app-tags">
+          <span class="app-tag">AI</span>
+          <span class="app-tag">Faith</span>
+          <span class="app-tag">Free</span>
+        </div>
+        <a class="app-btn" href="https://bible-ai-sarath.vercel.app" target="_blank">Open App →</a>
+      </div>
+
+    </div>
+
+    <!-- Church -->
+    <div class="section-title">⛪ Ministry</div>
+    <div class="mobile-card">
+      <div class="mobile-icon">🙏</div>
+      <div class="mobile-info">
+        <div class="mobile-name">Our Redeemer Telugu Church</div>
+        <div class="mobile-desc">Live streams and worship services for Our Redeemer Telugu Church community. Join us online for worship, sermons and fellowship.</div>
+        <div class="store-btns">
+          <a class="app-btn" href="https://our-redeemer-telugu-church.vercel.app" target="_blank">Visit Site →</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile Apps -->
+    <div class="section-title">📱 Mobile Apps</div>
+    <div class="mobile-card">
+      <div class="mobile-icon">📖</div>
+      <div class="mobile-info">
+        <div class="mobile-name">Holy Scripture — Bible App</div>
+        <div class="mobile-desc">Holy Scripture - Bible App brings you the complete Bible in English (ASV) and Telugu, available completely offline.</div>
+        <div class="store-btns">
+          <a href="https://apps.apple.com/app/holy-scripture-bible-app/id6758640285" target="_blank" style="display:inline-block;text-decoration:none;">
+            <div style="display:flex;align-items:center;gap:8px;background:#000;color:#fff;padding:8px 16px;border-radius:10px;font-family:-apple-system,sans-serif;">
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="white"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+              <div>
+                <div style="font-size:10px;opacity:0.8;">Download on the</div>
+                <div style="font-size:16px;font-weight:600;line-height:1.2;">App Store</div>
+              </div>
+            </div>
+          </a>
+          <a href="https://play.google.com/store/apps/details?id=com.sarath_vaddi.SCRIPTURE" target="_blank" style="display:inline-block;text-decoration:none;">
+            <div style="display:flex;align-items:center;gap:8px;background:#000;color:#fff;padding:8px 16px;border-radius:10px;font-family:-apple-system,sans-serif;">
+              <svg viewBox="0 0 24 24" width="24" height="24"><path fill="#4CAF50" d="M1.22 0L13.3 12 1.22 24c-.44-.44-.72-1.05-.72-1.73V1.73C.5 1.05.78.44 1.22 0z"/><path fill="#FF3D00" d="M17.5 12L13.3 7.8l-9.45-5.45L16.1 8.93z"/><path fill="#FFD600" d="M3.85 21.65L13.3 16.2l4.2-4.2-2.2 1.27z"/><path fill="#00BCD4" d="M16.1 15.07L3.85 21.65l9.45-5.45z"/></svg>
+              <div>
+                <div style="font-size:10px;opacity:0.8;">GET IT ON</div>
+                <div style="font-size:16px;font-weight:600;line-height:1.2;">Google Play</div>
+              </div>
+            </div>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contact -->
+    <div class="contact">
+      <p>Have an idea or want to collaborate? Get in touch!</p>
+      <div class="contact-links">
+        <a class="contact-link" href="https://mail.google.com/mail/?view=cm&to=sarath.defense@gmail.com" target="_blank">📩 Email Me</a>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+      Built with ❤️ by <span>Sarath Vaddi</span> · All apps free to use
+    </footer>
+
+  </div>
+  <script>
+    const canvas = document.getElementById('neural-canvas');
+    const ctx = canvas.getContext('2d');
+
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    const nodes = [];
+    const count = 55;
+
+    for (let i = 0; i < count; i++) {
+      nodes.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.15,
+        vy: (Math.random() - 0.5) * 0.15,
+        r: Math.random() * 1.5 + 1,
+        pulse: Math.random() * Math.PI * 2,
+      });
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      for (let i = 0; i < nodes.length; i++) {
+        const a = nodes[i];
+        a.x += a.vx;
+        a.y += a.vy;
+        if (a.x < 0 || a.x > canvas.width) a.vx *= -1;
+        if (a.y < 0 || a.y > canvas.height) a.vy *= -1;
+        a.pulse += 0.008;
+
+        for (let j = i + 1; j < nodes.length; j++) {
+          const b = nodes[j];
+          const dx = a.x - b.x, dy = a.y - b.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          const maxDist = 110;
+          if (dist < maxDist) {
+            const alpha = 1 - dist / maxDist;
+            // Outer soft glow line
+            ctx.beginPath();
+            ctx.moveTo(a.x, a.y);
+            ctx.lineTo(b.x, b.y);
+            ctx.strokeStyle = `rgba(96,165,250,${alpha * 0.12})`;
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+            // Sharp bright core line
+            ctx.beginPath();
+            ctx.moveTo(a.x, a.y);
+            ctx.lineTo(b.x, b.y);
+            ctx.strokeStyle = `rgba(147,210,255,${alpha * 0.35})`;
+            ctx.lineWidth = 0.6;
+            ctx.stroke();
+          }
+        }
+
+        const pulse = Math.sin(a.pulse) * 0.5 + 0.5;
+        // Subtle outer glow
+        ctx.beginPath();
+        ctx.arc(a.x, a.y, a.r * 3, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(96,165,250,${0.02 + pulse * 0.03})`;
+        ctx.fill();
+        // Node core
+        ctx.beginPath();
+        ctx.arc(a.x, a.y, a.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(186,230,253,${0.6 + pulse * 0.25})`;
+        ctx.fill();
+      }
+
+      requestAnimationFrame(draw);
+    }
+    draw();
+  </script>
+</body>
+</html>
