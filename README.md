@@ -292,3 +292,18 @@ Licensing is currently under review while dependencies and model-provider licens
 Created by **Sarath Vaddi**
 
 *Your Voice. Your Presence. Your Content.*
+
+## Milestone 2: Narration Engine
+
+Spyrath now includes a provider-neutral narration layer:
+
+- `TTSProvider` defines the text-to-speech provider contract.
+- `TTSRequest` and `TTSResult` carry provider inputs and outputs.
+- `NarrationPlan` defines independently resumable narration segments.
+- `NarrationEngine` generates WAV artifacts through the selected provider.
+- Existing valid narration is discovered and skipped after restart.
+- Missing or invalid narration is regenerated automatically.
+- Generation uses the Milestone 1 `.tmp -> validate -> atomic rename` production path.
+
+The next provider implementation can wrap Chatterbox without coupling the core
+pipeline to Chatterbox-specific APIs or dependencies.
