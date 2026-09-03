@@ -1,15 +1,13 @@
 from __future__ import annotations
 
-import json
-import threading
-from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
 from spyrath.project import ProjectOrchestrator, ProjectSpec, ProjectStage, ProjectState, ProjectStateStore, StageStatus
+from spyrath.runtime import ProductionRuntime, RuntimeJob, RuntimeJobStore
 
-from .repository import ProjectNotFoundError, ProjectRepository
+from .repository import ProjectRepository
 
 OrchestratorFactory = Callable[[ProjectSpec, Path], ProjectOrchestrator]
 
@@ -24,6 +22,7 @@ class ProjectSummary:
     last_error: str | None
     final_path: str | None
     running: bool
+    runtime_job: dict[str, object] | None = None
 
     def as_dict(self) -> dict[str, object]:
         return {
@@ -35,15 +34,16 @@ class ProjectSummary:
             "last_error": self.last_error,
             "final_path": self.final_path,
             "running": self.running,
+            "runtime_job": self.runtime_job,
         }
 
 
 class StudioService:
-    """Application service behind the REST API and Studio dashboard.
+    """Application service backed by a durable production runtime.
 
-    Expensive production runs execute on a worker thread so API requests can
-    return immediately. The durable project.json written by ProjectOrchestrator
-    remains the source of truth across process restarts.
+    Runtime jobs are recorded on disk before execution, bounded by max_workers,
+    retried as resumable runs, and recover cleanly after process interruption.
+    The project.json/media artifacts remain the pipeline source of truth.
     """
 
     def __init__(
@@ -52,21 +52,24 @@ class StudioService:
         repository: ProjectRepository,
         orchestrator_factory: OrchestratorFactory,
         max_workers: int = 1,
+        max_attempts: int = 1,
+        runtime_preflight: Callable[[], object] | None = None,
+        runtime: ProductionRuntime | None = None,
     ) -> None:
-        if max_workers <= 0:
-            raise ValueError("max_workers must be > 0")
+        if max_workers <= 0 or max_attempts <= 0:
+            raise ValueError("max_workers and max_attempts must be > 0")
         self.repository = repository
         self.orchestrator_factory = orchestrator_factory
-        self.executor = ThreadPoolExecutor(max_workers=max_workers, thread_name_prefix="spyrath")
-        self._jobs: dict[str, Future] = {}
-        self._lock = threading.Lock()
+        self.runtime = runtime or ProductionRuntime(
+            job_store=RuntimeJobStore(repository.root / ".runtime" / "jobs.json"),
+            max_workers=max_workers,
+            max_attempts=max_attempts,
+            preflight=runtime_preflight,
+        )
 
     def create_project(self, spec: ProjectSpec) -> ProjectSummary:
         self.repository.create(spec)
-        # Seed project.json so a newly-created project is immediately visible
-        # as four pending stages even before production starts.
-        store = ProjectStateStore(self.repository.state_path(spec.project_id))
-        store.save(ProjectState.new(spec))
+        ProjectStateStore(self.repository.state_path(spec.project_id)).save(ProjectState.new(spec))
         return self.get_project(spec.project_id)
 
     def list_projects(self) -> list[ProjectSummary]:
@@ -98,6 +101,7 @@ class StudioService:
             overall = "partial"
         else:
             overall = "pending"
+        latest = self.runtime.latest(project_id)
         return ProjectSummary(
             project_id=spec.project_id,
             title=spec.title,
@@ -107,29 +111,31 @@ class StudioService:
             last_error=state.last_error,
             final_path=final_path,
             running=running,
+            runtime_job=latest.as_dict() if latest else None,
         )
 
     def run_project(self, project_id: str, *, resume: bool = False) -> ProjectSummary:
         spec = self.repository.load(project_id)
-        with self._lock:
-            current = self._jobs.get(project_id)
-            if current is not None and not current.done():
-                raise RuntimeError(f"Project is already running: {project_id}")
-            future = self.executor.submit(self._execute, spec, resume)
-            self._jobs[project_id] = future
+        self.runtime.submit(
+            project_id,
+            resume=resume,
+            callback=lambda job: self._execute(spec, job),
+        )
         return self.get_project(project_id)
 
     def is_running(self, project_id: str) -> bool:
-        with self._lock:
-            future = self._jobs.get(project_id)
-            return bool(future is not None and not future.done())
+        return self.runtime.is_running(project_id)
 
     def wait(self, project_id: str, timeout: float | None = None) -> ProjectSummary:
-        with self._lock:
-            future = self._jobs.get(project_id)
-        if future is not None:
-            future.result(timeout=timeout)
+        self.runtime.wait(project_id, timeout=timeout)
         return self.get_project(project_id)
+
+    def latest_job(self, project_id: str) -> RuntimeJob | None:
+        self.repository.load(project_id)  # enforce not-found semantics
+        return self.runtime.latest(project_id)
+
+    def list_jobs(self) -> list[RuntimeJob]:
+        return self.runtime.job_store.list()
 
     def final_download(self, project_id: str) -> Path:
         summary = self.get_project(project_id)
@@ -140,9 +146,9 @@ class StudioService:
             raise FileNotFoundError("Final video artifact is missing")
         return path
 
-    def _execute(self, spec: ProjectSpec, resume: bool) -> None:
+    def _execute(self, spec: ProjectSpec, job: RuntimeJob) -> None:
         orchestrator = self.orchestrator_factory(spec, self.repository.project_root(spec.project_id))
-        if resume:
+        if job.resume or job.attempts > 1:
             orchestrator.resume()
         else:
             orchestrator.run()

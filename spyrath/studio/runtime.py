@@ -12,6 +12,7 @@ from spyrath.pipeline import NarrationEngine, PresenterProductionEngine, VideoAs
 from spyrath.project import ProjectOrchestrator, ProjectSpec
 from spyrath.providers.tts import ChatterboxConfig, ChatterboxTTSProvider
 from spyrath.providers.video import SadTalkerConfig, SadTalkerProvider
+from spyrath.runtime import RuntimePreflight
 
 from .repository import ProjectRepository
 from .service import StudioService
@@ -28,6 +29,8 @@ class StudioRuntimeConfig:
     ffmpeg: str = "ffmpeg"
     ffprobe: str = "ffprobe"
     max_workers: int = 1
+    max_attempts: int = 2
+    require_gpu: bool = True
 
     @classmethod
     def from_env(cls) -> "StudioRuntimeConfig":
@@ -43,6 +46,8 @@ class StudioRuntimeConfig:
             ffmpeg=os.getenv("SPYRATH_FFMPEG", "ffmpeg"),
             ffprobe=os.getenv("SPYRATH_FFPROBE", "ffprobe"),
             max_workers=int(os.getenv("SPYRATH_MAX_WORKERS", "1")),
+            max_attempts=int(os.getenv("SPYRATH_MAX_ATTEMPTS", "2")),
+            require_gpu=os.getenv("SPYRATH_REQUIRE_GPU", "1").lower() not in {"0", "false", "no"},
         )
 
     def validate_for_production(self) -> None:
@@ -100,8 +105,17 @@ class RealOrchestratorFactory:
 def create_real_service(config: StudioRuntimeConfig | None = None) -> StudioService:
     runtime = config or StudioRuntimeConfig.from_env()
     repository = ProjectRepository(runtime.projects_root)
+    preflight = RuntimePreflight(
+        sadtalker_repository=runtime.sadtalker_repository,
+        sadtalker_python=runtime.sadtalker_python,
+        ffmpeg=runtime.ffmpeg,
+        ffprobe=runtime.ffprobe,
+        require_gpu=runtime.require_gpu,
+    )
     return StudioService(
         repository=repository,
         orchestrator_factory=RealOrchestratorFactory(runtime),
         max_workers=runtime.max_workers,
+        max_attempts=runtime.max_attempts,
+        runtime_preflight=preflight.require_ready,
     )

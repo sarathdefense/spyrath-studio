@@ -37,6 +37,18 @@ def create_app(service: StudioService):
     def list_projects():
         return {"projects": [item.as_dict() for item in service.list_projects()]}
 
+    @app.get("/api/runtime/jobs")
+    def list_runtime_jobs():
+        return {"jobs": [job.as_dict() for job in service.list_jobs()]}
+
+    @app.get("/api/projects/{project_id}/runtime")
+    def project_runtime(project_id: str):
+        try:
+            job = service.latest_job(project_id)
+        except ProjectNotFoundError as exc:
+            raise HTTPException(status_code=404, detail="Project not found") from exc
+        return {"job": job.as_dict() if job else None}
+
     @app.post("/api/projects", status_code=status.HTTP_201_CREATED)
     def create_project(payload: dict):
         """Backward-compatible JSON project creation endpoint."""

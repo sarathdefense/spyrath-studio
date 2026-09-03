@@ -589,3 +589,83 @@ uvicorn spyrath.studio.app:app --host 127.0.0.1 --port 8000
 Then open `http://127.0.0.1:8000` and create a project from the browser.
 
 Milestone 9 intentionally does not hide the requirement for a correctly prepared SadTalker runtime. The Studio UI now owns project creation and durable assets; GPU environment/bootstrap automation remains a separate deployment concern.
+
+## Milestone 10 — Production Runtime & GPU Job Execution
+
+Milestone 10 replaces the Studio's process-local background thread bookkeeping with a bounded, durable production runtime designed for expensive GPU work.
+
+### Runtime job lifecycle
+
+Each production request creates a durable job record before execution:
+
+```text
+queued → running → succeeded
+             └──→ retry/resume → running
+             └──→ failed
+```
+
+Runtime metadata is stored under the Studio projects root at:
+
+```text
+<projects-root>/.runtime/jobs.json
+```
+
+Each job records its project, run/resume mode, attempt count, timestamps, status, and last runtime error. Jobs left in `running` by a dead Studio process are marked failed/recoverable during runtime startup; the project artifacts/checkpoints remain intact and can be resumed.
+
+### Bounded workers and retries
+
+`ProductionRuntime` limits concurrent jobs with `SPYRATH_MAX_WORKERS` and prevents the same project from being launched twice at the same time. Failed jobs can automatically retry using the project's existing resumable pipeline.
+
+```bash
+export SPYRATH_MAX_WORKERS=1
+export SPYRATH_MAX_ATTEMPTS=2
+```
+
+The first attempt uses `run()`. Automatic retry uses `resume()` so completed narration, audio, presenter chunks, and assembly artifacts are not intentionally regenerated.
+
+### Production preflight
+
+Before a real production job begins, Spyrath checks the worker environment for:
+
+- SadTalker `inference.py`
+- configured SadTalker Python executable
+- FFmpeg
+- ffprobe
+- NVIDIA GPU availability through `nvidia-smi`
+
+GPU enforcement is enabled by default for the production runtime. It can be disabled for development/CPU-only validation:
+
+```bash
+export SPYRATH_REQUIRE_GPU=0
+```
+
+This setting does not make SadTalker fast on CPU; it only changes the runtime readiness gate.
+
+### Runtime observability API
+
+```text
+GET /api/runtime/jobs
+GET /api/projects/{project_id}/runtime
+```
+
+Project summaries also include the latest `runtime_job`, allowing the Studio UI to show queued/running/retry/failure metadata without treating in-memory threads as the source of truth.
+
+### Reliability contract
+
+Milestone 10 does not replace the artifact-level checkpointing from earlier milestones. It adds a durable execution layer around it:
+
+```text
+API request
+   ↓
+Durable runtime job
+   ↓
+Preflight
+   ↓
+Bounded worker
+   ↓
+ProjectOrchestrator.run()/resume()
+   ↓
+Artifact validation + checkpoints
+```
+
+A worker/runtime failure therefore does not imply that expensive completed media work is lost.
