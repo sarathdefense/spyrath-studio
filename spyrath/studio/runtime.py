@@ -31,6 +31,8 @@ class StudioRuntimeConfig:
     max_workers: int = 1
     max_attempts: int = 2
     require_gpu: bool = True
+    metadata_db: Path | None = None
+    auth_enabled: bool = False
 
     @classmethod
     def from_env(cls) -> "StudioRuntimeConfig":
@@ -48,6 +50,8 @@ class StudioRuntimeConfig:
             max_workers=int(os.getenv("SPYRATH_MAX_WORKERS", "1")),
             max_attempts=int(os.getenv("SPYRATH_MAX_ATTEMPTS", "2")),
             require_gpu=os.getenv("SPYRATH_REQUIRE_GPU", "1").lower() not in {"0", "false", "no"},
+            metadata_db=Path(os.getenv("SPYRATH_METADATA_DB", str(Path.home() / ".spyrath" / "studio.db"))).expanduser(),
+            auth_enabled=os.getenv("SPYRATH_AUTH_ENABLED", "0").lower() in {"1", "true", "yes"},
         )
 
     def validate_for_production(self) -> None:

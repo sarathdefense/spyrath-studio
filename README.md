@@ -693,3 +693,35 @@ GET /api/projects/{project_id}/video
 ```
 
 The UI deliberately does not claim that a running GPU process can be force-cancelled safely. Resume/retry remains checkpoint-safe; cooperative cancellation can be added later at provider boundaries without risking partially written media.
+
+## Milestone 12 — Accounts, Storage & Deployment
+
+Milestone 12 adds the deployment boundary for Spyrath Studio:
+
+- SQLite-backed user/account and project-ownership metadata (`SPYRATH_METADATA_DB`).
+- Optional API-key authentication (`SPYRATH_AUTH_ENABLED=1`, header `X-Spyrath-Key`).
+- Bootstrap admin credentials via `SPYRATH_BOOTSTRAP_USER`, `SPYRATH_BOOTSTRAP_NAME`, and `SPYRATH_BOOTSTRAP_API_KEY`.
+- Per-user project listing and ownership checks when authentication is enabled.
+- `ArtifactStorage` abstraction plus path-safe, atomic `LocalArtifactStorage` for durable filesystem deployments; cloud object-storage adapters can implement the same contract later.
+- `/api/health` liveness and `/api/ready` deployment-readiness endpoints.
+- Non-root Docker image and docker-compose persistent `/data` volume.
+
+Local development remains backward compatible because authentication defaults to disabled. For an authenticated deployment:
+
+```bash
+export SPYRATH_AUTH_ENABLED=1
+export SPYRATH_METADATA_DB=/data/studio.db
+export SPYRATH_BOOTSTRAP_USER=admin
+export SPYRATH_BOOTSTRAP_API_KEY='replace-with-a-secret'
+uvicorn spyrath.studio.app:app --host 0.0.0.0 --port 8000
+```
+
+Clients then send `X-Spyrath-Key: replace-with-a-secret`. Do not commit production API keys to source control.
+
+Container smoke start (CPU/local mode):
+
+```bash
+docker compose up --build
+```
+
+Production GPU deployment must additionally provide the prepared SadTalker runtime/checkpoints and NVIDIA container/GPU access required by Milestone 10.

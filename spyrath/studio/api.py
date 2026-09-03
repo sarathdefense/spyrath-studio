@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import tempfile
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 from spyrath.project import ProjectChapter, ProjectSpec
 
@@ -12,10 +12,10 @@ from .service import StudioService
 from .uploads import ProjectAssetStore, safe_upload_filename
 
 
-def create_app(service: StudioService):
+def create_app(service: StudioService, access=None):
     """Create the FastAPI application without making FastAPI a core dependency."""
     try:
-        from fastapi import FastAPI, File, Form, HTTPException, UploadFile, status
+        from fastapi import FastAPI, File, Form, HTTPException, UploadFile, status, Header
         from fastapi.responses import FileResponse, HTMLResponse
     except ImportError as exc:  # pragma: no cover - depends on optional install
         raise RuntimeError(
@@ -25,6 +25,15 @@ def create_app(service: StudioService):
     app = FastAPI(title="Spyrath Studio API", version="0.1.0")
     assets = ProjectAssetStore(service.repository)
 
+    def _user(key):
+        if access is None: return None
+        try: return access.authenticate(key)
+        except PermissionError as exc: raise HTTPException(status_code=401, detail=str(exc)) from exc
+    def _owned(project_id, user):
+        if access is None or user is None: return
+        try: access.require_project(project_id, user)
+        except PermissionError as exc: raise HTTPException(status_code=404, detail="Project not found") from exc
+
     @app.get("/", response_class=HTMLResponse)
     def dashboard():
         return DASHBOARD_HTML
@@ -33,9 +42,15 @@ def create_app(service: StudioService):
     def health():
         return {"status": "ok"}
 
+    @app.get("/api/ready")
+    def ready():
+        return {"status": "ready", "repository": str(service.repository.root), "runtime": "available"}
+
     @app.get("/api/projects")
-    def list_projects():
-        return {"projects": [item.as_dict() for item in service.list_projects()]}
+    def list_projects(x_spyrath_key: Optional[str] = Header(None)):
+        user=_user(x_spyrath_key); items=service.list_projects()
+        if access is not None and access.config.enabled: items=[i for i in items if access.accounts.owns(i.project_id,user.user_id)]
+        return {"projects": [item.as_dict() for item in items]}
 
     @app.get("/api/runtime/jobs")
     def list_runtime_jobs():
@@ -50,11 +65,13 @@ def create_app(service: StudioService):
         return {"job": job.as_dict() if job else None}
 
     @app.post("/api/projects", status_code=status.HTTP_201_CREATED)
-    def create_project(payload: dict):
+    def create_project(payload: dict, x_spyrath_key: Optional[str] = Header(None)):
         """Backward-compatible JSON project creation endpoint."""
         try:
-            spec = _spec_from_payload(payload)
-            return service.create_project(spec).as_dict()
+            user=_user(x_spyrath_key); spec = _spec_from_payload(payload)
+            result=service.create_project(spec)
+            if access is not None and access.config.enabled: access.accounts.claim_project(spec.project_id,user.user_id)
+            return result.as_dict()
         except (ValueError, KeyError, TypeError) as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -66,9 +83,11 @@ def create_app(service: StudioService):
         manuscript: Any = File(...),
         presenter_image: Any = File(...),
         voice_reference: Any = File(...),
+        x_spyrath_key: Optional[str] = Header(None),
     ):
         """Create a durable project from browser-uploaded production assets."""
         try:
+            user=_user(x_spyrath_key)
             with tempfile.TemporaryDirectory(prefix="spyrath-upload-") as temp_dir:
                 temp = Path(temp_dir)
                 manuscript_path = await _save_upload(manuscript, temp)
@@ -82,13 +101,16 @@ def create_app(service: StudioService):
                     voice_reference_path=voice_path,
                     language=language,
                 )
-                return service.create_project(spec).as_dict()
+                result=service.create_project(spec)
+                if access is not None and access.config.enabled: access.accounts.claim_project(spec.project_id,user.user_id)
+                return result.as_dict()
         except (ValueError, KeyError, TypeError) as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     @app.get("/api/projects/{project_id}")
-    def get_project(project_id: str):
+    def get_project(project_id: str, x_spyrath_key: Optional[str] = Header(None)):
         try:
+            user=_user(x_spyrath_key); _owned(project_id,user)
             return service.get_project(project_id).as_dict()
         except ProjectNotFoundError as exc:
             raise HTTPException(status_code=404, detail="Project not found") from exc

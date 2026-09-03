@@ -1,0 +1,11 @@
+services:
+  studio:
+    build: .
+    ports: ["8000:8000"]
+    environment:
+      SPYRATH_AUTH_ENABLED: "0"
+      SPYRATH_REQUIRE_GPU: "0"
+    volumes:
+      - spyrath-data:/data
+volumes:
+  spyrath-data:
