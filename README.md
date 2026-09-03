@@ -461,3 +461,48 @@ Project
 ```
 
 This is the orchestration layer intended to sit behind the future Spyrath Studio dashboard and job API.
+
+## Milestone 8: Project API + Studio Dashboard Foundation
+
+Milestone 8 exposes the persistent project orchestrator through a framework-thin application service, a REST API, and an initial Studio dashboard.
+
+Install the optional web dependencies:
+
+```bash
+pip install -e ".[studio]"
+```
+
+The API surface now includes:
+
+- `GET /api/health`
+- `GET /api/projects`
+- `POST /api/projects`
+- `GET /api/projects/{project_id}`
+- `POST /api/projects/{project_id}/run`
+- `POST /api/projects/{project_id}/resume`
+- `GET /api/projects/{project_id}/download`
+
+`StudioService` runs expensive project production on a worker thread and returns immediately to the API. The durable `project.json` written by the Milestone 7 orchestrator remains the source of truth, so process restarts do not erase completed stage state.
+
+The dashboard at `/` polls project status and displays overall progress, per-stage state, failures, Resume Production, and the final video download when export is complete.
+
+Example application wiring:
+
+```python
+from spyrath.studio import ProjectRepository, StudioService, create_app
+
+repository = ProjectRepository("./spyrath-projects")
+service = StudioService(
+    repository=repository,
+    orchestrator_factory=build_orchestrator,  # application-specific provider wiring
+)
+app = create_app(service)
+```
+
+Run with Uvicorn after exposing the configured `app` from your application module:
+
+```bash
+uvicorn my_spyrath_app:app --reload
+```
+
+Provider/model construction deliberately remains outside the HTTP layer. This keeps API concerns separate from Chatterbox, SadTalker, FFmpeg, GPU provisioning, and future remote-job infrastructure.
