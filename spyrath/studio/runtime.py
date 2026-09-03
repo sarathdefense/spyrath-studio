@@ -33,6 +33,7 @@ class StudioRuntimeConfig:
     require_gpu: bool = True
     metadata_db: Path | None = None
     auth_enabled: bool = False
+    usage_db: Path | None = None
 
     @classmethod
     def from_env(cls) -> "StudioRuntimeConfig":
@@ -52,6 +53,7 @@ class StudioRuntimeConfig:
             require_gpu=os.getenv("SPYRATH_REQUIRE_GPU", "1").lower() not in {"0", "false", "no"},
             metadata_db=Path(os.getenv("SPYRATH_METADATA_DB", str(Path.home() / ".spyrath" / "studio.db"))).expanduser(),
             auth_enabled=os.getenv("SPYRATH_AUTH_ENABLED", "0").lower() in {"1", "true", "yes"},
+            usage_db=Path(os.getenv("SPYRATH_USAGE_DB", str(Path.home() / ".spyrath" / "usage.db"))).expanduser(),
         )
 
     def validate_for_production(self) -> None:

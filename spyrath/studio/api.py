@@ -12,7 +12,7 @@ from .service import StudioService
 from .uploads import ProjectAssetStore, safe_upload_filename
 
 
-def create_app(service: StudioService, access=None):
+def create_app(service: StudioService, access=None, usage=None):
     """Create the FastAPI application without making FastAPI a core dependency."""
     try:
         from fastapi import FastAPI, File, Form, HTTPException, UploadFile, status, Header
@@ -44,7 +44,29 @@ def create_app(service: StudioService, access=None):
 
     @app.get("/api/ready")
     def ready():
-        return {"status": "ready", "repository": str(service.repository.root), "runtime": "available"}
+        report = service.runtime_readiness()
+        return {"status": "ready" if report["ready"] else "not_ready", "repository": str(service.repository.root), "runtime": report}
+
+    @app.get("/api/plans")
+    def plans():
+        from .commercial import BETA_PLAN
+        return {"plans": [BETA_PLAN.as_dict()]}
+
+    @app.get("/api/me")
+    def me(x_spyrath_key: Optional[str] = Header(None)):
+        user = _user(x_spyrath_key)
+        if user is None:
+            return {"user": {"user_id": "local", "display_name": "Local User"}}
+        return {"user": {"user_id": user.user_id, "display_name": user.display_name}}
+
+    @app.get("/api/usage")
+    def usage_summary(x_spyrath_key: Optional[str] = Header(None)):
+        user = _user(x_spyrath_key)
+        user_id = user.user_id if user is not None else "local"
+        if usage is None:
+            return {"usage": None}
+        project_count = len(access.accounts.projects_for(user_id)) if access is not None and access.config.enabled else len(service.list_projects())
+        return {"usage": usage.summary(user_id, project_count)}
 
     @app.get("/api/projects")
     def list_projects(x_spyrath_key: Optional[str] = Header(None)):
@@ -53,12 +75,17 @@ def create_app(service: StudioService, access=None):
         return {"projects": [item.as_dict() for item in items]}
 
     @app.get("/api/runtime/jobs")
-    def list_runtime_jobs():
-        return {"jobs": [job.as_dict() for job in service.list_jobs()]}
+    def list_runtime_jobs(x_spyrath_key: Optional[str] = Header(None)):
+        user = _user(x_spyrath_key)
+        jobs = service.list_jobs()
+        if access is not None and access.config.enabled:
+            jobs = [job for job in jobs if access.accounts.owns(job.project_id, user.user_id)]
+        return {"jobs": [job.as_dict() for job in jobs]}
 
     @app.get("/api/projects/{project_id}/runtime")
-    def project_runtime(project_id: str):
+    def project_runtime(project_id: str, x_spyrath_key: Optional[str] = Header(None)):
         try:
+            user=_user(x_spyrath_key); _owned(project_id,user)
             job = service.latest_job(project_id)
         except ProjectNotFoundError as exc:
             raise HTTPException(status_code=404, detail="Project not found") from exc
@@ -69,9 +96,15 @@ def create_app(service: StudioService, access=None):
         """Backward-compatible JSON project creation endpoint."""
         try:
             user=_user(x_spyrath_key); spec = _spec_from_payload(payload)
+            if usage is not None:
+                uid = user.user_id if user is not None else "local"
+                count = len(access.accounts.projects_for(uid)) if access is not None and access.config.enabled else len(service.list_projects())
+                usage.require_project_capacity(uid, count)
             result=service.create_project(spec)
             if access is not None and access.config.enabled: access.accounts.claim_project(spec.project_id,user.user_id)
             return result.as_dict()
+        except PermissionError as exc:
+            raise HTTPException(status_code=429, detail=str(exc)) from exc
         except (ValueError, KeyError, TypeError) as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -88,6 +121,10 @@ def create_app(service: StudioService, access=None):
         """Create a durable project from browser-uploaded production assets."""
         try:
             user=_user(x_spyrath_key)
+            if usage is not None:
+                uid = user.user_id if user is not None else "local"
+                count = len(access.accounts.projects_for(uid)) if access is not None and access.config.enabled else len(service.list_projects())
+                usage.require_project_capacity(uid, count)
             with tempfile.TemporaryDirectory(prefix="spyrath-upload-") as temp_dir:
                 temp = Path(temp_dir)
                 manuscript_path = await _save_upload(manuscript, temp)
@@ -104,6 +141,8 @@ def create_app(service: StudioService, access=None):
                 result=service.create_project(spec)
                 if access is not None and access.config.enabled: access.accounts.claim_project(spec.project_id,user.user_id)
                 return result.as_dict()
+        except PermissionError as exc:
+            raise HTTPException(status_code=429, detail=str(exc)) from exc
         except (ValueError, KeyError, TypeError) as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -116,24 +155,25 @@ def create_app(service: StudioService, access=None):
             raise HTTPException(status_code=404, detail="Project not found") from exc
 
     @app.post("/api/projects/{project_id}/run", status_code=status.HTTP_202_ACCEPTED)
-    def run_project(project_id: str):
-        return _start(project_id, resume=False)
+    def run_project(project_id: str, x_spyrath_key: Optional[str] = Header(None)):
+        return _start(project_id, resume=False, key=x_spyrath_key)
 
     @app.post("/api/projects/{project_id}/resume", status_code=status.HTTP_202_ACCEPTED)
-    def resume_project(project_id: str):
-        return _start(project_id, resume=True)
+    def resume_project(project_id: str, x_spyrath_key: Optional[str] = Header(None)):
+        return _start(project_id, resume=True, key=x_spyrath_key)
 
     @app.get("/api/projects/{project_id}/media/presenter")
-    def presenter_media(project_id: str):
-        return _project_asset(project_id, "presenter", "image/jpeg")
+    def presenter_media(project_id: str, x_spyrath_key: Optional[str] = Header(None)):
+        return _project_asset(project_id, "presenter", "image/jpeg", x_spyrath_key)
 
     @app.get("/api/projects/{project_id}/media/voice")
-    def voice_media(project_id: str):
-        return _project_asset(project_id, "voice", "audio/wav")
+    def voice_media(project_id: str, x_spyrath_key: Optional[str] = Header(None)):
+        return _project_asset(project_id, "voice", "audio/wav", x_spyrath_key)
 
     @app.get("/api/projects/{project_id}/video")
-    def preview_video(project_id: str):
+    def preview_video(project_id: str, x_spyrath_key: Optional[str] = Header(None)):
         try:
+            user=_user(x_spyrath_key); _owned(project_id,user)
             path = service.final_download(project_id)
         except ProjectNotFoundError as exc:
             raise HTTPException(status_code=404, detail="Project not found") from exc
@@ -141,8 +181,9 @@ def create_app(service: StudioService, access=None):
             raise HTTPException(status_code=409, detail=str(exc)) from exc
         return FileResponse(path, media_type="video/mp4")
 
-    def _project_asset(project_id: str, kind: str, fallback_type: str):
+    def _project_asset(project_id: str, kind: str, fallback_type: str, key=None):
         try:
+            user=_user(key); _owned(project_id,user)
             path = service.project_assets(project_id)[kind]
         except ProjectNotFoundError as exc:
             raise HTTPException(status_code=404, detail="Project not found") from exc
@@ -153,8 +194,9 @@ def create_app(service: StudioService, access=None):
         return FileResponse(path, media_type=types.get(suffix, fallback_type))
 
     @app.get("/api/projects/{project_id}/download")
-    def download(project_id: str):
+    def download(project_id: str, x_spyrath_key: Optional[str] = Header(None)):
         try:
+            user=_user(x_spyrath_key); _owned(project_id,user)
             path = service.final_download(project_id)
         except ProjectNotFoundError as exc:
             raise HTTPException(status_code=404, detail="Project not found") from exc
@@ -162,12 +204,20 @@ def create_app(service: StudioService, access=None):
             raise HTTPException(status_code=409, detail=str(exc)) from exc
         return FileResponse(path, media_type="video/mp4", filename=path.name)
 
-    def _start(project_id: str, *, resume: bool):
+    def _start(project_id: str, *, resume: bool, key=None):
         try:
+            user=_user(key); _owned(project_id,user)
+            uid = user.user_id if user is not None else "local"
+            if usage is not None:
+                usage.require_production_capacity(uid)
             summary = service.run_project(project_id, resume=resume)
+            if usage is not None:
+                usage.record(uid, "production_start", project_id)
             return summary.as_dict()
         except ProjectNotFoundError as exc:
             raise HTTPException(status_code=404, detail="Project not found") from exc
+        except PermissionError as exc:
+            raise HTTPException(status_code=429, detail=str(exc)) from exc
         except RuntimeError as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
 

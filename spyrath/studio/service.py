@@ -145,6 +145,15 @@ class StudioService:
     def list_jobs(self) -> list[RuntimeJob]:
         return self.runtime.job_store.list()
 
+    def runtime_readiness(self) -> dict[str, object]:
+        if self.runtime.preflight is None:
+            return {"ready": True, "detail": "No runtime preflight configured"}
+        try:
+            self.runtime.preflight()
+        except Exception as exc:
+            return {"ready": False, "detail": str(exc)}
+        return {"ready": True, "detail": "Production runtime preflight passed"}
+
     def final_download(self, project_id: str) -> Path:
         summary = self.get_project(project_id)
         if not summary.final_path:

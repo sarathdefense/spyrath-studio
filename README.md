@@ -725,3 +725,9 @@ docker compose up --build
 ```
 
 Production GPU deployment must additionally provide the prepared SadTalker runtime/checkpoints and NVIDIA container/GPU access required by Milestone 10.
+
+## Milestone 13: Commercialization + v1 Beta Release
+
+Spyrath Studio is now versioned as `1.0.0b1`. M13 adds a durable SQLite usage ledger, a built-in beta plan, project and monthly production-start guardrails, `/api/me`, `/api/plans`, and `/api/usage`, and closes tenant-isolation gaps on run/resume/media/download routes. The production Compose defaults now enable authentication and GPU readiness; secrets remain environment-provided.
+
+The beta plan defaults to **10 projects** and **50 production starts per UTC month**. These are beta cost/safety limits, not final pricing. See `docs/BETA_RELEASE.md` for the release gate and deployment checklist. A real Chatterbox + patched SadTalker + FFmpeg GPU smoke test remains mandatory before calling any hosted deployment production-ready.
