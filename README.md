@@ -669,3 +669,27 @@ Artifact validation + checkpoints
 ```
 
 A worker/runtime failure therefore does not imply that expensive completed media work is lost.
+
+## Milestone 11: Production Studio UI
+
+Milestone 11 turns the Studio dashboard into a production-control surface while keeping the durable M7-M10 execution model underneath it.
+
+Highlights:
+- live 2-second status refresh
+- real presenter chunk progress (`completed / total`) derived from durable project artifacts
+- weighted overall progress while presenter generation is running
+- runtime job status, attempts, elapsed time, and surfaced errors
+- presenter-image and voice-reference previews
+- inline final-video playback plus explicit download
+- Run Again / Resume Production controls driven by durable project state
+- responsive project cards and a more polished production workspace
+
+New media endpoints:
+
+```text
+GET /api/projects/{project_id}/media/presenter
+GET /api/projects/{project_id}/media/voice
+GET /api/projects/{project_id}/video
+```
+
+The UI deliberately does not claim that a running GPU process can be force-cancelled safely. Resume/retry remains checkpoint-safe; cooperative cancellation can be added later at provider boundaries without risking partially written media.

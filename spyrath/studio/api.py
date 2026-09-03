@@ -101,6 +101,35 @@ def create_app(service: StudioService):
     def resume_project(project_id: str):
         return _start(project_id, resume=True)
 
+    @app.get("/api/projects/{project_id}/media/presenter")
+    def presenter_media(project_id: str):
+        return _project_asset(project_id, "presenter", "image/jpeg")
+
+    @app.get("/api/projects/{project_id}/media/voice")
+    def voice_media(project_id: str):
+        return _project_asset(project_id, "voice", "audio/wav")
+
+    @app.get("/api/projects/{project_id}/video")
+    def preview_video(project_id: str):
+        try:
+            path = service.final_download(project_id)
+        except ProjectNotFoundError as exc:
+            raise HTTPException(status_code=404, detail="Project not found") from exc
+        except FileNotFoundError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        return FileResponse(path, media_type="video/mp4")
+
+    def _project_asset(project_id: str, kind: str, fallback_type: str):
+        try:
+            path = service.project_assets(project_id)[kind]
+        except ProjectNotFoundError as exc:
+            raise HTTPException(status_code=404, detail="Project not found") from exc
+        if path is None or not Path(path).is_file():
+            raise HTTPException(status_code=404, detail=f"{kind.title()} asset not found")
+        suffix = Path(path).suffix.lower()
+        types = {".png":"image/png", ".jpg":"image/jpeg", ".jpeg":"image/jpeg", ".webp":"image/webp", ".wav":"audio/wav", ".mp3":"audio/mpeg", ".m4a":"audio/mp4", ".flac":"audio/flac", ".ogg":"audio/ogg"}
+        return FileResponse(path, media_type=types.get(suffix, fallback_type))
+
     @app.get("/api/projects/{project_id}/download")
     def download(project_id: str):
         try:

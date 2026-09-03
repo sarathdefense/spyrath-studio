@@ -23,6 +23,7 @@ class ProjectSummary:
     final_path: str | None
     running: bool
     runtime_job: dict[str, object] | None = None
+    presenter_progress: dict[str, int] | None = None
 
     def as_dict(self) -> dict[str, object]:
         return {
@@ -35,6 +36,7 @@ class ProjectSummary:
             "final_path": self.final_path,
             "running": self.running,
             "runtime_job": self.runtime_job,
+            "presenter_progress": self.presenter_progress,
         }
 
 
@@ -81,6 +83,11 @@ class StudioService:
         running = self.is_running(project_id)
         completed = sum(1 for stage in ProjectStage if state.stage(stage).status == StageStatus.COMPLETED)
         progress = round((completed / len(ProjectStage)) * 100)
+        presenter_progress = self._presenter_progress(project_id)
+        presenter_state = state.stage(ProjectStage.PRESENTER).status
+        if presenter_state == StageStatus.RUNNING and presenter_progress["total"]:
+            # Preserve the four-stage model while exposing meaningful in-stage progress.
+            progress = round((2 + presenter_progress["completed"] / presenter_progress["total"]) / len(ProjectStage) * 100)
         stages = {
             stage.value: {
                 "status": state.stage(stage).status.value,
@@ -112,6 +119,7 @@ class StudioService:
             final_path=final_path,
             running=running,
             runtime_job=latest.as_dict() if latest else None,
+            presenter_progress=presenter_progress,
         )
 
     def run_project(self, project_id: str, *, resume: bool = False) -> ProjectSummary:
@@ -145,6 +153,20 @@ class StudioService:
         if not path.is_file() or path.stat().st_size <= 0:
             raise FileNotFoundError("Final video artifact is missing")
         return path
+
+    def project_assets(self, project_id: str) -> dict[str, Path | None]:
+        spec = self.repository.load(project_id)
+        return {"presenter": spec.presenter_image, "voice": spec.voice_reference}
+
+    def _presenter_progress(self, project_id: str) -> dict[str, int]:
+        root = self.repository.project_root(project_id)
+        audio_root = root / "audio" / "chunks"
+        video_root = root / "video" / "chunks"
+        total = sum(1 for path in audio_root.glob("**/chunk_*.wav") if path.is_file() and path.stat().st_size > 0) if audio_root.exists() else 0
+        completed = sum(1 for path in video_root.glob("**/chunk_*.mp4") if path.is_file() and path.stat().st_size > 0) if video_root.exists() else 0
+        if total:
+            completed = min(completed, total)
+        return {"completed": completed, "total": total, "remaining": max(total - completed, 0)}
 
     def _execute(self, spec: ProjectSpec, job: RuntimeJob) -> None:
         orchestrator = self.orchestrator_factory(spec, self.repository.project_root(spec.project_id))

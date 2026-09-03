@@ -154,3 +154,44 @@ def test_fastapi_dashboard_and_project_endpoints(tmp_path):
     download = client.get("/api/projects/book/download")
     assert download.status_code == 200
     assert download.content == b"fake mp4"
+
+
+def test_presenter_chunk_progress_is_derived_from_durable_artifacts(tmp_path):
+    service = make_service(tmp_path)
+    service.create_project(make_spec())
+    root = service.repository.project_root("book")
+    audio = root / "audio" / "chunks" / "chapter_01"
+    video = root / "video" / "chunks" / "chapter_01"
+    audio.mkdir(parents=True)
+    video.mkdir(parents=True)
+    for index in range(5):
+        (audio / f"chunk_{index:03d}.wav").write_bytes(b"wav")
+    for index in range(3):
+        (video / f"chunk_{index:03d}.mp4").write_bytes(b"mp4")
+
+    progress = service.get_project("book").presenter_progress
+    assert progress == {"completed": 3, "total": 5, "remaining": 2}
+
+
+def test_studio_media_preview_endpoints(tmp_path):
+    pytest.importorskip("fastapi")
+    from fastapi.testclient import TestClient
+
+    service = make_service(tmp_path)
+    root = tmp_path / "assets"
+    root.mkdir()
+    presenter = root / "presenter.png"
+    voice = root / "voice.wav"
+    presenter.write_bytes(b"png")
+    voice.write_bytes(b"wav")
+    spec = make_spec()
+    spec = ProjectSpec(
+        project_id=spec.project_id, title=spec.title, chapters=spec.chapters,
+        presenter_image=presenter, voice_reference=voice,
+    )
+    service.create_project(spec)
+    client = TestClient(create_app(service))
+
+    assert client.get("/api/projects/book/media/presenter").content == b"png"
+    assert client.get("/api/projects/book/media/voice").content == b"wav"
+    assert client.get("/api/projects/book/video").status_code == 409
