@@ -375,3 +375,50 @@ print(result.segmentation.progress.completed, result.segmentation.chunks_total)
 The current implementation deliberately targets uncompressed PCM WAV so the core media
 pipeline stays dependency-free. FFmpeg-backed transcoding/validation can be added as a
 media adapter without changing the checkpoint or orchestration contracts.
+
+## Milestone 5: Presenter Video Provider
+
+Spyrath now has a provider-neutral presenter-video layer and a SadTalker adapter:
+
+- `VideoProvider`, `VideoRequest`, and `VideoResult` define the image + audio -> MP4 provider contract.
+- `PresenterProductionEngine` renders independently resumable presenter chunks through the Milestone 1 production engine.
+- Existing valid MP4 chunks are reconciled from disk and skipped after restart.
+- Missing or corrupt video chunks are regenerated through `.tmp -> validate -> atomic rename`.
+- A manifest fingerprints the presenter image, every audio chunk, and the provider configuration so stale videos are invalidated when an input changes.
+- `SadTalkerProvider` wraps a local SadTalker checkout through its `inference.py` command without coupling Spyrath's core orchestration to SadTalker internals.
+- The core MP4 validator is dependency-free and intentionally lightweight; a later FFmpeg adapter can add stream-level validation.
+
+The milestone regression test reproduces the real long-form recovery case: 98 of 107 presenter chunks exist, Spyrath restarts, and generation resumes at chunk index 98 (human-facing 99/107) without regenerating the first 98.
+
+Example:
+
+```python
+from pathlib import Path
+
+from spyrath.checkpoint import CheckpointManager
+from spyrath.pipeline import PresenterProductionEngine
+from spyrath.providers.video import SadTalkerConfig, SadTalkerProvider
+
+provider = SadTalkerProvider(
+    SadTalkerConfig(
+        repository_dir=Path("/opt/SadTalker"),
+        checkpoint_dir=Path("/opt/SadTalker/checkpoints"),
+        preprocess="full",
+        still=True,
+    )
+)
+
+engine = PresenterProductionEngine(
+    provider=provider,
+    checkpoint=CheckpointManager("production/checkpoint.json"),
+)
+
+result = engine.render(
+    chapter="chapter_01",
+    audio_chunks=sorted(Path("chunks/chapter_01").glob("chunk_*.wav")),
+    presenter_image="assets/presenter.png",
+    output_dir="presenter/chapter_01",
+)
+
+print(result.progress.completed, result.chunks_total)
+```

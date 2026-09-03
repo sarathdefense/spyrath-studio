@@ -1,4 +1,5 @@
 from .narration import NarrationEngine, NarrationPlan, NarrationSegment
+from .presenter import PresenterProductionEngine, PresenterProductionResult
 from .production import ProductionJob, ProductionProgress
 
 __all__ = [
@@ -7,4 +8,6 @@ __all__ = [
     "NarrationSegment",
     "ProductionJob",
     "ProductionProgress",
+    "PresenterProductionEngine",
+    "PresenterProductionResult",
 ]
