@@ -444,3 +444,20 @@ print(result.probe.duration, result.probe.video_codec, result.probe.audio_codec)
 ```
 
 FFmpeg and ffprobe must be installed on the production worker. They remain external runtime tools rather than Python package dependencies.
+
+## Project Orchestration
+
+Milestone 7 connects the reliability-first production components into one persistent Spyrath project. `ProjectOrchestrator.run()` and `resume()` coordinate narration, chapter audio preparation, presenter generation, and final H.264 export while writing an atomic `project.json` state file.
+
+The orchestrator records each stage as `pending`, `running`, `completed`, or `failed`, together with its input fingerprint and produced artifacts. Completed stages are reused only when their inputs still match and their artifacts still exist. If an input changes or an artifact disappears, that stage and all dependent downstream stages are rerun. A failure is persisted before it is surfaced, so restarting the process can resume from the failed stage without rerunning earlier valid work.
+
+```text
+Project
+  -> Narration
+  -> Audio Preparation
+  -> Presenter Video
+  -> Final H.264 Export
+  -> Ready
+```
+
+This is the orchestration layer intended to sit behind the future Spyrath Studio dashboard and job API.
