@@ -338,3 +338,40 @@ Spyrath now includes a provider-neutral narration layer:
 
 The next provider implementation can wrap Chatterbox without coupling the core
 pipeline to Chatterbox-specific APIs or dependencies.
+
+## Milestone 4: Audio Segmentation + Chapter Assembly
+
+Spyrath now prepares narration for presenter generation without repeating valid work:
+
+- `ChapterAssembler` concatenates compatible PCM WAV narration segments into one chapter WAV.
+- Chapter assembly uses `.tmp -> validate -> atomic rename` and a source fingerprint manifest.
+- `AudioSegmenter` splits a chapter WAV into fixed-duration chunks (30 seconds by default).
+- Every chunk is independently validated and checkpointed through the production engine.
+- Restarting after an interruption skips valid chunks and regenerates only missing or corrupt ones.
+- If the chapter source changes, stale chunks are invalidated before regeneration.
+- `AudioPreparationEngine` provides the end-to-end `narration segments -> chapter WAV -> presenter chunks` workflow.
+
+Example:
+
+```python
+from spyrath.checkpoint import CheckpointManager
+from spyrath.media import AudioPreparationEngine
+
+engine = AudioPreparationEngine(
+    checkpoint=CheckpointManager("production/checkpoint.json"),
+    target_duration_seconds=30,
+)
+
+result = engine.prepare(
+    chapter="chapter_01",
+    narration_segments=["segment_000.wav", "segment_001.wav"],
+    chapter_output_path="chapters/chapter_01.wav",
+    chunks_output_dir="chunks/chapter_01",
+)
+
+print(result.segmentation.progress.completed, result.segmentation.chunks_total)
+```
+
+The current implementation deliberately targets uncompressed PCM WAV so the core media
+pipeline stays dependency-free. FFmpeg-backed transcoding/validation can be added as a
+media adapter without changing the checkpoint or orchestration contracts.
