@@ -177,6 +177,37 @@ studio.generate("./chapters")
 
 ---
 
+
+## Chatterbox TTS Provider
+
+Spyrath can use Resemble AI's Chatterbox as an optional local TTS provider.
+The core package does not import Chatterbox or Torch until this provider is
+actually used.
+
+Install the optional provider dependencies:
+
+```bash
+pip install -e ".[chatterbox]"
+```
+
+Create the provider using the approved reference-production defaults:
+
+```python
+from spyrath.providers.tts import ChatterboxTTSProvider
+
+provider = ChatterboxTTSProvider()  # auto-selects CUDA, MPS, or CPU
+```
+
+The current English provider uses voice-conditioned synthesis and therefore
+expects an authorized voice-reference WAV. Its default generation settings are
+`exaggeration=0.3` and `cfg_weight=0.5`, matching the Spyrath reference book
+production. Model loading is lazy and the loaded model is reused across
+segments.
+
+When used through `NarrationEngine`, generated WAVs still follow Spyrath's
+reliability contract: temporary output, validation, atomic promotion, and
+resume from already-valid artifacts.
+
 ## Roadmap
 
 ### v0.1 - Narration Engine
