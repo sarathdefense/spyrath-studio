@@ -506,3 +506,86 @@ uvicorn my_spyrath_app:app --reload
 ```
 
 Provider/model construction deliberately remains outside the HTTP layer. This keeps API concerns separate from Chatterbox, SadTalker, FFmpeg, GPU provisioning, and future remote-job infrastructure.
+
+## Milestone 9: Real Studio Application Wiring + Project Creation UI
+
+Milestone 9 turns the Milestone 8 dashboard into a real project entry point and wires Studio projects to the production providers from Milestones 3, 5, and 6.
+
+### Browser project creation
+
+The dashboard now includes **+ New Project**. A user can upload:
+
+- a UTF-8 `.txt` or `.md` manuscript,
+- a voice reference (`.wav`, `.mp3`, `.m4a`, `.flac`, or `.ogg`), and
+- a presenter image (`.png`, `.jpg`, `.jpeg`, or `.webp`).
+
+Uploaded assets are copied into the project-owned `assets/` directory before the temporary HTTP upload is removed. Project specs therefore reference durable project files rather than browser temp paths.
+
+Markdown `#` and `##` headings become chapters automatically. Plain text becomes one chapter. Long paragraphs are deterministically split into TTS-friendly narration segments while preserving order.
+
+The upload endpoint is:
+
+```text
+POST /api/projects/upload
+```
+
+The original JSON `POST /api/projects` endpoint remains available for programmatic clients.
+
+### Real production wiring
+
+`spyrath.studio.runtime.RealOrchestratorFactory` connects one Studio project to:
+
+```text
+ChatterboxTTSProvider
+        ↓
+NarrationEngine
+        ↓
+AudioPreparationEngine
+        ↓
+SadTalkerProvider
+        ↓
+PresenterProductionEngine
+        ↓
+FFmpegMedia / VideoAssemblyEngine
+        ↓
+Final H.264/AAC video
+```
+
+Every project gets its own checkpoint file and production directories while retaining the resume/reconciliation behavior from earlier milestones.
+
+### Runtime configuration
+
+Install the browser/API dependencies:
+
+```bash
+pip install -e ".[studio,chatterbox]"
+```
+
+Point Spyrath at the proven SadTalker runtime:
+
+```bash
+export SPYRATH_SADTALKER_REPO=/path/to/SadTalker
+export SPYRATH_SADTALKER_PYTHON=/path/to/python3.10
+export SPYRATH_SADTALKER_CHECKPOINTS=/path/to/SadTalker/checkpoints
+```
+
+Optional settings:
+
+```bash
+export SPYRATH_PROJECTS_ROOT="$HOME/.spyrath/projects"
+export SPYRATH_TTS_DEVICE=auto
+export SPYRATH_AUDIO_CHUNK_SECONDS=30
+export SPYRATH_FFMPEG=ffmpeg
+export SPYRATH_FFPROBE=ffprobe
+export SPYRATH_MAX_WORKERS=1
+```
+
+Start Studio:
+
+```bash
+uvicorn spyrath.studio.app:app --host 127.0.0.1 --port 8000
+```
+
+Then open `http://127.0.0.1:8000` and create a project from the browser.
+
+Milestone 9 intentionally does not hide the requirement for a correctly prepared SadTalker runtime. The Studio UI now owns project creation and durable assets; GPU environment/bootstrap automation remains a separate deployment concern.

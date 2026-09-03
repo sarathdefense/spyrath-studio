@@ -442,3 +442,9 @@ Spyrath Studio
       ↓
 Your AI-Presented Video
 ```
+
+## Studio application boundary (Milestone 9)
+
+The Studio application layer owns browser/API concerns only: project registration, durable input assets, manuscript parsing, background job submission, status, and downloads. Provider/model code remains behind the existing orchestration interfaces.
+
+`RealOrchestratorFactory` is the composition root. It constructs one checkpoint manager and the concrete Chatterbox, audio-preparation, SadTalker, and FFmpeg engines for each project. This keeps HTTP code independent from GPU/media implementation details and allows tests to replace the composition root with fake orchestrators.
