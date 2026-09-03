@@ -422,3 +422,25 @@ result = engine.render(
 
 print(result.progress.completed, result.chunks_total)
 ```
+
+## Milestone 6 — Video Assembly + Final H.264 Export
+
+Spyrath can now assemble validated presenter chunks into reusable chapter videos and produce a delivery-ready final MP4. The final export uses FFmpeg with H.264 (`libx264`), AAC audio, `yuv420p`, configurable CRF/preset, and `+faststart` by default.
+
+The assembly layer validates every input with ffprobe, fingerprints source artifacts, reuses unchanged chapter/final outputs, rebuilds stale outputs, writes through temporary files, validates the result, and atomically promotes it only after success. This preserves the reliability-first behavior used throughout the pipeline.
+
+```python
+from spyrath.media.video import ExportConfig, FFmpegMedia
+from spyrath.pipeline.export import VideoAssemblyEngine
+
+media = FFmpegMedia(ExportConfig(crf=18, preset="fast"))
+engine = VideoAssemblyEngine(media)
+result = engine.export_final(
+    chapters={"chapter_01": chapter_01_chunks, "chapter_02": chapter_02_chunks},
+    chapter_output_dir="output/chapter_videos",
+    final_path="output/final/book_presenter.mp4",
+)
+print(result.probe.duration, result.probe.video_codec, result.probe.audio_codec)
+```
+
+FFmpeg and ffprobe must be installed on the production worker. They remain external runtime tools rather than Python package dependencies.

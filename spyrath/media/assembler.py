@@ -1,5 +1,5 @@
-"""Compatibility exports for media assembly primitives."""
+"""Compatibility exports for media assembly."""
 
-from .audio import ChapterAssembler, ChapterAssemblyResult
+from .video import ExportConfig, FFmpegMedia, VideoProbe
 
-__all__ = ["ChapterAssembler", "ChapterAssemblyResult"]
+__all__ = ["ExportConfig", "FFmpegMedia", "VideoProbe"]
