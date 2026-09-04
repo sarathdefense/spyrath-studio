@@ -231,3 +231,4 @@ output/
 __pycache__/
 *.pyc
 .venv/
+assets/*.wav
