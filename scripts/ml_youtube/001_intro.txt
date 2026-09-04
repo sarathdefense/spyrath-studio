@@ -1,0 +1,5 @@
+Machine learning can feel overwhelming at first. You hear names like linear regression, random forest, support vector machines, clustering, neural networks, and deep learning.
+
+But underneath those names are a few surprisingly simple ideas.
+
+In this video, I'll explain the major machine learning algorithms in plain English, using simple examples. By the end, you'll understand what they do, when they're useful, and how they fit together.

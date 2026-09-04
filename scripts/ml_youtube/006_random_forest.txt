@@ -1,0 +1,11 @@
+A random forest improves on a single decision tree by building many trees.
+
+Each tree sees slightly different data and makes its own prediction.
+
+The forest then combines those predictions.
+
+For classification, the trees vote.
+
+For regression, their predictions are averaged.
+
+This usually makes random forests more stable and accurate than relying on just one tree.

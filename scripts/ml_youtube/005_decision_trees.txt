@@ -1,0 +1,13 @@
+Decision trees work like a sequence of questions.
+
+For example, if we are deciding whether someone may buy a product, the tree might ask:
+
+Is the customer over thirty?
+
+Do they have a high income?
+
+Have they purchased from us before?
+
+Each answer sends us down another branch until we reach a final prediction.
+
+Decision trees are popular because they are easy to understand and explain.

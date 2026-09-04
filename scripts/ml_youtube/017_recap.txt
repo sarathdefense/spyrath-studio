@@ -1,0 +1,21 @@
+Let's quickly recap.
+
+Linear regression predicts numbers.
+
+Logistic regression predicts categories using probabilities.
+
+Decision trees make predictions through a series of questions.
+
+Random forests combine many trees.
+
+K nearest neighbors looks at nearby examples.
+
+Naive Bayes uses probability.
+
+S V M finds strong decision boundaries.
+
+K means finds clusters.
+
+P C A reduces dimensions.
+
+And neural networks learn complex patterns.

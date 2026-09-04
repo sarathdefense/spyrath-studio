@@ -1,0 +1,11 @@
+Let's start with linear regression.
+
+Linear regression is used when we want to predict a number.
+
+Imagine predicting the price of a house from its size.
+
+You give the algorithm examples of house sizes and selling prices. It finds a line that best represents the relationship between them.
+
+Once that line is learned, we can estimate the price of a new house.
+
+Simple, fast, and still very useful.

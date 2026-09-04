@@ -1,0 +1,13 @@
+Let's connect this to a real-world example.
+
+Imagine a healthcare system analyzing patient data.
+
+Regression might predict how long a patient will stay in the hospital.
+
+Classification might estimate whether a patient is at high risk for readmission.
+
+Clustering might discover groups of patients with similar characteristics.
+
+And neural networks might analyze medical images.
+
+Different algorithms solve different types of problems.

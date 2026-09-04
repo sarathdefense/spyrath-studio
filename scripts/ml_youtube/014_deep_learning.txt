@@ -1,0 +1,11 @@
+Deep learning is essentially neural networks with many layers.
+
+Those extra layers allow the system to learn increasingly complex representations.
+
+In image recognition, early layers may detect edges.
+
+Later layers may detect shapes.
+
+And deeper layers may recognize entire objects.
+
+Deep learning powers many modern applications in vision, speech, language, and generative A I.

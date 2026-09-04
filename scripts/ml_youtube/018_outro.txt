@@ -1,0 +1,11 @@
+You do not need to memorize every mathematical formula to begin understanding machine learning.
+
+Start by understanding what problem each algorithm is designed to solve.
+
+Then learn how the algorithm works, experiment with real data, and build something.
+
+That is the fastest way to make machine learning practical.
+
+I'm Sarath Vaddi.
+
+Thanks for watching, and keep learning, keep building, and keep making an impact.

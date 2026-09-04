@@ -1,0 +1,11 @@
+K nearest neighbors, or K N N, is based on a very simple idea.
+
+Look at the data points closest to the new example.
+
+Suppose we want to classify a new fruit.
+
+If most nearby fruits are apples, the new fruit is probably an apple.
+
+The value K tells us how many neighbors to consider.
+
+K N N is easy to understand, but it can become slow on very large datasets.

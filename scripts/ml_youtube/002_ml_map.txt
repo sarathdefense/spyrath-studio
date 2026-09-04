@@ -1,0 +1,11 @@
+Before looking at individual algorithms, it helps to understand the big picture.
+
+Most machine learning methods fall into a few major categories.
+
+Supervised learning uses labeled examples. The model learns from inputs where we already know the correct answer.
+
+Unsupervised learning looks for structure without labeled answers.
+
+And reinforcement learning learns through interaction, using rewards and penalties to improve its decisions.
+
+Keep those three buckets in mind as we go.

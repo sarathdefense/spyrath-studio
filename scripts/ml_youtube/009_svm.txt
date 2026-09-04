@@ -1,0 +1,9 @@
+Support vector machines, or S V M, try to find the best boundary between groups.
+
+Imagine red dots on one side and blue dots on the other.
+
+Many lines might separate them, but S V M looks for the line with the largest possible margin between the groups.
+
+That wide margin can make the classifier more robust.
+
+S V M can also use kernels to handle more complicated boundaries.

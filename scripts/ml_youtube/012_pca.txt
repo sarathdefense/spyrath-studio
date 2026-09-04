@@ -1,0 +1,11 @@
+P C A stands for principal component analysis.
+
+Its goal is dimensionality reduction.
+
+Imagine a dataset with dozens or hundreds of features.
+
+Some of those features may contain overlapping information.
+
+P C A transforms the data into a smaller set of new variables that preserve as much important variation as possible.
+
+This can make visualization easier and sometimes improve model efficiency.

@@ -1,0 +1,11 @@
+Naive Bayes uses probability.
+
+It calculates how likely different outcomes are based on the features we observe.
+
+A classic example is spam detection.
+
+Words like winner, free, or prize may appear more often in spam messages.
+
+Naive Bayes combines those probabilities to estimate whether a new email is spam.
+
+The word naive comes from its simplifying assumption that features are independent.

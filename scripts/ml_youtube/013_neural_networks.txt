@@ -1,0 +1,13 @@
+Neural networks are inspired loosely by the way biological neurons connect.
+
+A neural network contains layers of simple computational units.
+
+The input layer receives data.
+
+Hidden layers learn patterns.
+
+And the output layer produces the prediction.
+
+During training, the network adjusts its internal weights so that its predictions become more accurate.
+
+Neural networks are powerful because they can learn complex nonlinear relationships.

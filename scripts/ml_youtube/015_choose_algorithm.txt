@@ -1,0 +1,15 @@
+So how do you choose the right algorithm?
+
+Start with the problem, not the algorithm.
+
+If you are predicting a number, consider regression.
+
+If you are predicting a category, consider classification.
+
+If you are trying to discover groups, consider clustering.
+
+If the data has too many features, dimensionality reduction may help.
+
+And if the patterns are extremely complex, neural networks may be appropriate.
+
+Always start simple and compare results.

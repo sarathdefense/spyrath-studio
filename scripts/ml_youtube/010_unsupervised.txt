@@ -1,0 +1,9 @@
+Now let's move into unsupervised learning.
+
+Here, we do not give the algorithm correct answers.
+
+Instead, we give it data and ask it to discover useful structure.
+
+This is helpful when we want to find natural groups, reduce complexity, or explore data we do not fully understand yet.
+
+Two important examples are K means clustering and P C A.

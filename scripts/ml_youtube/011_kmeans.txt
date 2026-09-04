@@ -1,0 +1,11 @@
+K means clustering groups similar data points together.
+
+Suppose a business has thousands of customers.
+
+K means might discover groups such as budget shoppers, frequent shoppers, and premium customers.
+
+We choose the number of clusters, represented by K.
+
+The algorithm repeatedly updates the cluster centers until the groups become stable.
+
+It is simple and widely used for segmentation.

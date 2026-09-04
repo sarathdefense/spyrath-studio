@@ -1,0 +1,11 @@
+Logistic regression sounds like regression, but it is mainly used for classification.
+
+Instead of predicting a continuous number, it predicts the probability of a category.
+
+For example, is an email spam or not spam?
+
+Is a customer likely to leave or stay?
+
+The output is often a probability between zero and one, which we convert into a decision.
+
+It is one of the most common baseline models in machine learning.
